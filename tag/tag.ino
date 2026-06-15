@@ -11,7 +11,7 @@ For ESP32 UWB Pro with Display
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define TAG_ADDR "7D:00:22:EA:82:60:3B:9B"
+#define TAG_ADDR "26:00:22:EA:82:60:3B:9B"
 
 // #define DEBUG
 
@@ -25,6 +25,10 @@ For ESP32 UWB Pro with Display
 
 #define I2C_SDA 4
 #define I2C_SCL 5
+
+// Add near the top with your other #defines
+#define ANTENNA_DELAY 16482   // <-- same value as anchor 16384
+
 
 struct Link
 {
@@ -58,6 +62,10 @@ void setup()
     // init the configuration
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
     DW1000Ranging.initCommunication(UWB_RST, UWB_SS, UWB_IRQ); // Reset, CS, IRQ pin
+    
+    // Add in setup(), after DW1000Ranging.initCommunication(...)
+    DW1000.setAntennaDelay(ANTENNA_DELAY);
+
     // define the sketch as anchor. It will be great to dynamically change the type of module
     DW1000Ranging.attachNewRange(newRange);
     DW1000Ranging.attachNewDevice(newDevice);
@@ -88,6 +96,7 @@ void loop()
     }
 }
 
+/*
 void newRange()
 {
     Serial.print("from: ");
@@ -101,6 +110,18 @@ void newRange()
 
     fresh_link(uwb_data, DW1000Ranging.getDistantDevice()->getShortAddress(), DW1000Ranging.getDistantDevice()->getRange(), DW1000Ranging.getDistantDevice()->getRXPower());
     // print_link(uwb_data);
+}
+*/
+
+void newRange()
+{
+    Serial.print("(");
+    Serial.print(DW1000Ranging.getDistantDevice()->getShortAddress(), HEX);
+    Serial.print(", ");
+    Serial.print(DW1000Ranging.getDistantDevice()->getRange());
+    Serial.println(")");
+
+    fresh_link(uwb_data, DW1000Ranging.getDistantDevice()->getShortAddress(), DW1000Ranging.getDistantDevice()->getRange());
 }
 
 void newDevice(DW1000Device *device)
@@ -163,9 +184,13 @@ void add_link(struct Link *p, uint16_t addr)
 
 struct Link *find_link(struct Link *p, uint16_t addr)
 {
+
+/*
 #ifdef DEBUG
     Serial.println("find_link");
 #endif
+*/
+
     if (addr == 0)
     {
         Serial.println("find_link:Input addr is 0");
@@ -194,17 +219,21 @@ struct Link *find_link(struct Link *p, uint16_t addr)
     return NULL;
 }
 
-void fresh_link(struct Link *p, uint16_t addr, float range, float dbm)
+void fresh_link(struct Link *p, uint16_t addr, float range)//, float dbm)
 {
+
+/*
 #ifdef DEBUG
     Serial.println("fresh_link");
 #endif
+*/
+
     struct Link *temp = find_link(p, addr);
     if (temp != NULL)
     {
 
         temp->range = range;
-        temp->dbm = dbm;
+        //temp->dbm = dbm;
         return;
     }
     else
@@ -265,11 +294,12 @@ void logoshow(void)
     display.setTextSize(2);              // Normal 1:1 pixel scale
     display.setTextColor(SSD1306_WHITE); // Draw white text
     display.setCursor(0, 0);             // Start at top-left corner
-    display.println(F("Makerfabs"));
+    display.println(F("MOBILEPLAT"));
 
     display.setTextSize(1);
     display.setCursor(0, 20); // Start at top-left corner
-    display.println(F("DW1000 DEMO"));
+    display.println(F("DW1000"));
+    display.println(TAG_ADDR);
     display.display();
     delay(2000);
 }
@@ -297,8 +327,8 @@ void display_uwb(struct Link *p)
         temp = temp->next;
 
         // Serial.println("Dev %d:%d m", temp->next->anchor_addr, temp->next->range);
-        Serial.println(temp->anchor_addr, HEX);
-        Serial.println(temp->range);
+        //Serial.println(temp->anchor_addr, HEX);
+        //Serial.println(temp->range);
 
         char c[30];
 
